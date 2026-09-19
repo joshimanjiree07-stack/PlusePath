@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>PulsePath - Smart & Safe Route Planner</title>
+
+    <!-- Leaflet Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Our own styles -->
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header>
+
+        <div class="logo">
+            Pulse<span>Path</span>
+        </div>
+
+        <div class="header-right">
+
+            <select id="language">
+                <option value="en">English</option>
+                <option value="hi">हिन्दी</option>
+            </select>
+
+            <button class="sos" onclick="emergencySOS()">
+                🚨 SOS
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <div class="container">
+
+        <div class="layout">
+
+            <!-- LEFT PANEL -->
+            <div class="card">
+
+                <h1 id="planTitle">
+                    Plan Your Route
+                </h1>
+
+                <p class="subtitle" id="subtitle">
+                    Compare safety, time and distance before you choose.
+                </p>
+
+
+                <!-- START -->
+                <label id="startLabel">
+                    Starting Location
+                </label>
+
+                <div class="input-row">
+
+                    <input id="start" placeholder="e.g. Jaipur Railway Station" />
+
+                    <button class="location-btn" onclick="useCurrentLocation()">
+                        📍
+                    </button>
+
+                </div>
+
+
+                <!-- DESTINATION -->
+                <label id="destinationLabel">
+                    Destination
+                </label>
+
+                <input id="destination" placeholder="e.g. Hawa Mahal" />
+
+
+                <!-- PROFILE -->
+                <label>
+                    Profile
+                </label>
+
+                <div class="profiles">
+
+                    <button class="profile active" data-profile="general" onclick="selectProfile(this)">
+                        🚶 General
+                    </button>
+
+                    <button class="profile" data-profile="female" onclick="selectProfile(this)">
+                        👩 Female
+                    </button>
+
+                    <button class="profile" data-profile="cyclist" onclick="selectProfile(this)">
+                        🚲 Cyclist
+                    </button>
+
+                </div>
+
+
+                <!-- SEARCH -->
+                <button class="find-btn" id="findButton" onclick="findRoutes()">
+                    Find Safer Routes
+                </button>
+
+
+                <!-- FEMALE ALERT -->
+                <div id="femaleAlert" class="alert hidden"></div>
+
+
+                <!-- SELECTED ROUTE -->
+                <div class="details">
+
+                    <h2>
+                        Selected Route
+                    </h2>
+
+                    <div id="routeDetails">
+                        Select a route to see its safety details.
+                    </div>
+
+                </div>
+
+
+                <div class="note">
+                    Demo safety scores are simulated for this prototype.
+                    Production deployment should use verified local accident,
+                    traffic, lighting, road and pedestrian/cyclist datasets.
+                </div>
+
+            </div>
+
+
+            <!-- RIGHT PANEL -->
+            <div class="card">
+
+                <div class="map-container">
+
+                    <div id="map"></div>
+
+                    <div class="legend">
+
+                        <div>
+                            <span class="dot" style="background:#16a34a"></span>
+                            Low Risk
+                        </div>
+
+                        <div>
+                            <span class="dot" style="background:#f59e0b"></span>
+                            Moderate
+                        </div>
+
+                        <div>
+                            <span class="dot" style="background:#dc2626"></span>
+                            High Risk
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ROUTE CARDS -->
+                <div id="routes" class="routes"></div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- LEAFLET (must load BEFORE script.js) -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Our own JavaScript -->
+    <script src="script.js"></script>
+
+</body>
+
+</html>

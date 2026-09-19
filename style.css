@@ -1,0 +1,313 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: #f4f7fb;
+    color: #17202a;
+}
+
+/* HEADER */
+header {
+    background: #101828;
+    color: white;
+    padding: 15px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 25px;
+    font-weight: bold;
+}
+
+.logo span {
+    color: #4ade80;
+}
+
+.header-right {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+select,
+button,
+input {
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+button {
+    cursor: pointer;
+}
+
+.sos {
+    background: #dc2626;
+    color: white;
+    border: none;
+    font-weight: bold;
+}
+
+/* MAIN */
+.container {
+    max-width: 1300px;
+    margin: 25px auto;
+    padding: 0 20px;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 20px;
+}
+
+.card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+}
+
+h1 {
+    margin-bottom: 8px;
+}
+
+h2 {
+    margin-bottom: 15px;
+}
+
+.subtitle {
+    color: #667085;
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    font-size: 14px;
+    margin: 15px 0 7px;
+}
+
+.input-row {
+    display: flex;
+    gap: 7px;
+}
+
+.input-row input {
+    flex: 1;
+}
+
+input {
+    width: 100%;
+    font-size: 14px;
+}
+
+.location-btn {
+    background: #eef2ff;
+    color: #3730a3;
+}
+
+.find-btn {
+    width: 100%;
+    margin-top: 18px;
+    background: #4f46e5;
+    color: white;
+    border: none;
+    font-weight: bold;
+    font-size: 15px;
+}
+
+/* PROFILE */
+.profiles {
+    display: flex;
+    gap: 7px;
+}
+
+.profile {
+    flex: 1;
+    background: white;
+}
+
+.profile.active {
+    background: #eef2ff;
+    border-color: #4f46e5;
+    color: #3730a3;
+}
+
+/* MAP */
+#map {
+    width: 100%;
+    height: 500px;
+    border-radius: 12px;
+}
+
+.map-container {
+    position: relative;
+}
+
+.legend {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    z-index: 1000;
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px #0003;
+    font-size: 13px;
+}
+
+.dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+/* ROUTES */
+.routes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.route {
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 15px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.route:hover {
+    transform: translateY(-2px);
+}
+
+.route.selected {
+    border-color: #4f46e5;
+}
+
+.route-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 5px;
+}
+
+.score {
+    font-size: 28px;
+    font-weight: bold;
+    margin-top: 8px;
+}
+
+.metrics {
+    display: flex;
+    gap: 15px;
+    margin-top: 5px;
+    color: #475467;
+    font-size: 13px;
+}
+
+.risk-bar {
+    height: 8px;
+    background: #eee;
+    border-radius: 10px;
+    margin: 12px 0;
+}
+
+.risk-fill {
+    height: 100%;
+    border-radius: 10px;
+}
+
+.badge {
+    padding: 5px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.green {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.orange {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.red {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* ALERT */
+.alert {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #9a3412;
+    padding: 14px;
+    border-radius: 10px;
+    margin-top: 15px;
+    line-height: 1.5;
+}
+
+.hidden {
+    display: none;
+}
+
+/* DETAILS */
+.details {
+    margin-top: 20px;
+}
+
+.factor {
+    display: grid;
+    grid-template-columns: 140px 1fr 40px;
+    gap: 8px;
+    align-items: center;
+    margin: 10px 0;
+    font-size: 12px;
+}
+
+.factor-bar {
+    height: 7px;
+    background: #e5e7eb;
+    border-radius: 10px;
+}
+
+.factor-fill {
+    height: 100%;
+    background: #4f46e5;
+    border-radius: 10px;
+}
+
+.note {
+    color: #98a2b3;
+    font-size: 11px;
+    margin-top: 20px;
+    line-height: 1.5;
+}
+
+/* MOBILE */
+@media (max-width: 900px) {
+    .layout {
+        grid-template-columns: 1fr;
+    }
+
+    .routes {
+        grid-template-columns: 1fr;
+    }
+
+    #map {
+        height: 400px;
+    }
+}

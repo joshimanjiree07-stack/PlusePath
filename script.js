@@ -20,7 +20,7 @@ let map;
 let routeLayers = [];
 let routes = [];
 let selectedRoute = 0;
-let currentProfile = "general";
+let currentProfile = "pedestrian";
 let currentLanguage = "en";
 
 /* =========================================
@@ -34,7 +34,7 @@ const translations = {
         startingLocation: "Starting Location",
         destination: "Destination",
         profile: "Profile",
-        general: "General",
+        pedestrian: "Pedestrian",
         female: "Female",
         cyclist: "Cyclist",
         findSaferRoutes: "Find Safer Routes",
@@ -54,7 +54,7 @@ const translations = {
         startingLocation: "शुरुआती स्थान",
         destination: "गंतव्य",
         profile: "प्रोफ़ाइल",
-        general: "सामान्य",
+        pedestrian: "पैदल यात्री",
         female: "महिला",
         cyclist: "साइकिल चालक",
         findSaferRoutes: "सुरक्षित मार्ग खोजें",
@@ -74,7 +74,7 @@ const translations = {
         startingLocation: "सुरुवातीचे ठिकाण",
         destination: "गंतव्यस्थान",
         profile: "प्रोफाइल",
-        general: "सामान्य",
+        pedestrian: "पादचारी",
         female: "महिला",
         cyclist: "सायकलस्वार",
         findSaferRoutes: "सुरक्षित मार्ग शोधा",
@@ -94,7 +94,7 @@ const translations = {
         startingLocation: "પ્રારંભિક સ્થાન",
         destination: "ગંતવ્ય",
         profile: "પ્રોફાઇલ",
-        general: "સામાન્ય",
+        pedestrian: "પદયાત્રી",
         female: "મહિલા",
         cyclist: "સાયકલ સવાર",
         findSaferRoutes: "સુરક્ષિત માર્ગ શોધો",
@@ -114,7 +114,7 @@ const translations = {
         startingLocation: "ਸ਼ੁਰੂਆਤੀ ਸਥਾਨ",
         destination: "ਮੰਜ਼ਿਲ",
         profile: "ਪ੍ਰੋਫਾਈਲ",
-        general: "ਆਮ",
+        pedestrian: "ਪੈਦਲ ਯਾਤਰੀ",
         female: "ਔਰਤ",
         cyclist: "ਸਾਈਕਲ ਸਵਾਰ",
         findSaferRoutes: "ਸੁਰੱਖਿਅਤ ਰਸਤੇ ਲੱਭੋ",
@@ -134,7 +134,7 @@ const translations = {
         startingLocation: "শুরুর স্থান",
         destination: "গন্তব্য",
         profile: "প্রোফাইল",
-        general: "সাধারণ",
+        pedestrian: "পথচারী",
         female: "মহিলা",
         cyclist: "সাইকেল চালক",
         findSaferRoutes: "নিরাপদ পথ খুঁজুন",
@@ -154,7 +154,7 @@ const translations = {
         startingLocation: "தொடக்க இடம்",
         destination: "செல்லும் இடம்",
         profile: "சுயவிவரம்",
-        general: "பொது",
+        pedestrian: "நடைபயணி",
         female: "பெண்",
         cyclist: "மிதிவண்டி ஓட்டுநர்",
         findSaferRoutes: "பாதுகாப்பான பாதைகளைத் தேடுங்கள்",
@@ -174,7 +174,7 @@ const translations = {
         startingLocation: "ప్రారంభ స్థానం",
         destination: "గమ్యం",
         profile: "ప్రొఫైల్",
-        general: "సాధారణ",
+        pedestrian: "పాదచారి",
         female: "మహిళ",
         cyclist: "సైకిల్ రైడర్",
         findSaferRoutes: "సురక్షితమైన మార్గాలను కనుగొనండి",
@@ -194,7 +194,7 @@ const translations = {
         startingLocation: "ಪ್ರಾರಂಭದ ಸ್ಥಳ",
         destination: "ಗಮ್ಯಸ್ಥಾನ",
         profile: "ಪ್ರೊಫೈಲ್",
-        general: "ಸಾಮಾನ್ಯ",
+        pedestrian: "ಪಾದಚಾರಿ",
         female: "ಮಹಿಳೆ",
         cyclist: "ಸೈಕಲ್ ಸವಾರ",
         findSaferRoutes: "ಸುರಕ್ಷಿತ ಮಾರ್ಗಗಳನ್ನು ಹುಡುಕಿ",
@@ -214,7 +214,7 @@ const translations = {
         startingLocation: "ആരംഭ സ്ഥലം",
         destination: "ലക്ഷ്യസ്ഥാനം",
         profile: "പ്രൊഫൈൽ",
-        general: "പൊതുവായത്",
+        pedestrian: "കാൽനടയാത്രികൻ",
         female: "സ്ത്രീ",
         cyclist: "സൈക്കിൾ യാത്രികൻ",
         findSaferRoutes: "സുരക്ഷിതമായ വഴികൾ കണ്ടെത്തുക",
@@ -282,6 +282,49 @@ function changeLanguage(language) {
         createRoutes();
         selectRoute(selectedRoute);
     }
+}
+
+function expandRoutePlanner() {
+    const container = document.querySelector(".container");
+    const layout = document.querySelector(".layout");
+
+    if (!container || !layout) {
+        return;
+    }
+
+    container.classList.add("route-planner-expanded");
+    layout.classList.add("route-planner-expanded");
+
+    requestAnimationFrame(function () {
+        if (map) {
+            map.invalidateSize();
+        }
+    });
+}
+
+function initializeSidebarToggle() {
+    const sidebarToggle = document.getElementById("sidebarToggle");
+    const layout = document.querySelector(".layout");
+
+    if (!sidebarToggle || !layout) {
+        return;
+    }
+
+    sidebarToggle.addEventListener("click", function () {
+        const isCollapsed = layout.classList.toggle("sidebar-collapsed");
+
+        sidebarToggle.setAttribute("aria-expanded", String(!isCollapsed));
+        sidebarToggle.setAttribute(
+            "aria-label",
+            isCollapsed ? "Show route planner" : "Hide route planner"
+        );
+
+        requestAnimationFrame(function () {
+            if (map) {
+                map.invalidateSize();
+            }
+        });
+    });
 }
 
 const languageSelect = document.getElementById("languageSelect");
@@ -473,6 +516,7 @@ async function findRoutes() {
         drawRoutes();
         createRoutes();
         selectRoute(0);
+        expandRoutePlanner();
 
         /*
           Prepare voice instructions immediately.
@@ -550,12 +594,6 @@ function calculateSafetyScore(routeIndex) {
     ];
 
     let factor = { ...source };
-
-    if (currentProfile === "female") {
-        factor.lighting -= 4;
-        factor.activity -= 3;
-        factor.isolation -= 5;
-    }
 
     if (currentProfile === "cyclist") {
         factor.accessibility += 7;
@@ -1616,10 +1654,134 @@ if (languageSelect) {
 changeLanguage(savedLanguage);
 
 /* =========================================
+   LOGIN / ONBOARDING
+========================================= */
+
+function showPlanner() {
+    const loginScreen = document.getElementById("loginScreen");
+    const appContent = document.getElementById("appContent");
+
+    if (loginScreen) {
+        loginScreen.hidden = true;
+        loginScreen.setAttribute("aria-hidden", "true");
+    }
+
+    if (appContent) {
+        appContent.hidden = false;
+    }
+
+    requestAnimationFrame(function () {
+        if (map) {
+            map.invalidateSize();
+        }
+    });
+}
+
+function initializeLogin() {
+    const loginForm = document.getElementById("loginForm");
+    const loginLanguage = document.getElementById("userLanguage");
+    const savedProfile = localStorage.getItem("pulsePathUser");
+    const hasCompletedLogin = new URLSearchParams(window.location.search).get("login") === "complete";
+
+    if (loginLanguage && translations[savedLanguage]) {
+        loginLanguage.value = savedLanguage;
+    }
+
+    if (!loginForm) {
+        throw new Error("Login form is missing from the page.");
+    }
+
+    if (savedProfile) {
+        try {
+            const profile = JSON.parse(savedProfile);
+
+            if (
+                profile &&
+                typeof profile.name === "string" &&
+                typeof profile.email === "string" &&
+                translations[profile.language]
+            ) {
+                changeLanguage(profile.language);
+                showPlanner();
+
+                if (hasCompletedLogin) {
+                    window.history.replaceState({}, document.title, "index.html");
+                }
+
+                return;
+            }
+        } catch (error) {
+            localStorage.removeItem("pulsePathUser");
+        }
+    }
+
+    loginForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        if (!loginForm.reportValidity()) {
+            return;
+        }
+
+        const formData = new FormData(loginForm);
+        const profile = {
+            name: String(formData.get("name")).trim(),
+            email: String(formData.get("email")).trim(),
+            language: String(formData.get("language"))
+        };
+
+        if (!profile.name || !profile.email || !translations[profile.language]) {
+            const error = document.getElementById("loginError");
+
+            if (error) {
+                error.hidden = false;
+                error.textContent = "Please complete all fields before continuing.";
+            }
+
+            return;
+        }
+
+        localStorage.setItem("pulsePathUser", JSON.stringify(profile));
+        window.location.replace("index.html?login=complete");
+    });
+}
+
+function initializeTheme() {
+    const themeToggle = document.getElementById("themeToggle");
+    const savedTheme = localStorage.getItem("pulsePathTheme") || "light";
+
+    document.body.classList.toggle("dark-mode", savedTheme === "dark");
+
+    if (!themeToggle) {
+        return;
+    }
+
+    function updateThemeLabel() {
+        const isDark = document.body.classList.contains("dark-mode");
+        themeToggle.textContent = isDark ? "☀️ Light mode" : "🌙 Dark mode";
+        themeToggle.setAttribute(
+            "aria-label",
+            isDark ? "Switch to light mode" : "Switch to dark mode"
+        );
+    }
+
+    updateThemeLabel();
+
+    themeToggle.addEventListener("click", function () {
+        const isDark = document.body.classList.toggle("dark-mode");
+        localStorage.setItem("pulsePathTheme", isDark ? "dark" : "light");
+        updateThemeLabel();
+    });
+}
+
+/* =========================================
    INITIAL VOICE BUTTON STATE
 ========================================= */
 
 document.addEventListener("DOMContentLoaded", function () {
+
+    initializeLogin();
+    initializeTheme();
+    initializeSidebarToggle();
 
     const voiceButton =
         document.getElementById(

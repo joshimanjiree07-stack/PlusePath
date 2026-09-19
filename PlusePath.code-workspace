@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "../PlusePath"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "Plussepath"
+	}
+}

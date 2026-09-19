@@ -1,3 +1,8 @@
+/* =========================================================
+   PULSEPATH RESPONSIVE CSS
+   Desktop + Laptop + Tablet + Mobile
+   ========================================================= */
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -5,24 +10,40 @@
     font-family: Arial, sans-serif;
 }
 
-body {
-    background: #f4f7fb;
-    color: #17202a;
+html {
+    width: 100%;
+    overflow-x: hidden;
 }
 
-/* HEADER */
+body {
+    width: 100%;
+    min-height: 100vh;
+    background: #f4f7fb;
+    color: #17202a;
+    overflow-x: hidden;
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
 header {
+    width: 100%;
     background: #101828;
     color: white;
     padding: 15px 25px;
+
     display: flex;
     justify-content: space-between;
     align-items: center;
+
+    gap: 20px;
 }
 
 .logo {
     font-size: 25px;
     font-weight: bold;
+    white-space: nowrap;
 }
 
 .logo span {
@@ -31,8 +52,8 @@ header {
 
 .header-right {
     display: flex;
-    gap: 10px;
     align-items: center;
+    gap: 10px;
 }
 
 select,
@@ -41,6 +62,11 @@ input {
     border: 1px solid #d0d5dd;
     border-radius: 8px;
     padding: 10px;
+}
+
+select {
+    background: white;
+    color: #17202a;
 }
 
 button {
@@ -54,28 +80,52 @@ button {
     font-weight: bold;
 }
 
-/* MAIN */
+/* =========================================================
+   MAIN CONTAINER
+   ========================================================= */
+
 .container {
+    width: 100%;
     max-width: 1300px;
+
     margin: 25px auto;
+
     padding: 0 20px;
 }
 
+/* =========================================================
+   DESKTOP LAYOUT
+   ========================================================= */
+
 .layout {
+    width: 100%;
+
     display: grid;
-    grid-template-columns: 360px 1fr;
+
+    grid-template-columns: 360px minmax(0, 1fr);
+
     gap: 20px;
+
+    align-items: start;
 }
 
 .card {
+    width: 100%;
+    min-width: 0;
+
     background: white;
+
     border-radius: 15px;
+
     padding: 20px;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+
+    box-shadow:
+        0 3px 12px rgba(0, 0, 0, 0.08);
 }
 
 h1 {
     margin-bottom: 8px;
+    line-height: 1.2;
 }
 
 h2 {
@@ -85,53 +135,76 @@ h2 {
 .subtitle {
     color: #667085;
     margin-bottom: 20px;
+    line-height: 1.5;
 }
+
+/* =========================================================
+   FORM
+   ========================================================= */
 
 label {
     display: block;
+
     font-weight: bold;
+
     font-size: 14px;
+
     margin: 15px 0 7px;
 }
 
 .input-row {
     display: flex;
     gap: 7px;
+    width: 100%;
 }
 
 .input-row input {
     flex: 1;
+    min-width: 0;
 }
 
 input {
     width: 100%;
     font-size: 14px;
+    min-height: 42px;
 }
 
 .location-btn {
     background: #eef2ff;
     color: #3730a3;
+    white-space: nowrap;
 }
 
 .find-btn {
     width: 100%;
+
     margin-top: 18px;
+
     background: #4f46e5;
     color: white;
+
     border: none;
+
     font-weight: bold;
     font-size: 15px;
+
+    min-height: 45px;
 }
 
-/* PROFILE */
+/* =========================================================
+   PROFILE BUTTONS
+   ========================================================= */
+
 .profiles {
     display: flex;
     gap: 7px;
+    width: 100%;
 }
 
 .profile {
     flex: 1;
     background: white;
+    min-width: 0;
 }
 
 .profile.active {
@@ -140,51 +213,90 @@ input {
     color: #3730a3;
 }
 
-/* MAP */
+/* =========================================================
+   MAP
+   ========================================================= */
+
+.map-container {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+}
+
 #map {
     width: 100%;
     height: 500px;
     border-radius: 12px;
 }
 
-.map-container {
-    position: relative;
-}
+/* =========================================================
+   MAP LEGEND
+   ========================================================= */
 
 .legend {
     position: absolute;
+
     right: 10px;
     top: 10px;
+
     z-index: 1000;
+
     background: white;
+
     padding: 12px;
+
     border-radius: 8px;
+
     box-shadow: 0 2px 8px #0003;
+
     font-size: 13px;
+
+    max-width: calc(100% - 20px);
 }
 
 .dot {
     display: inline-block;
+
     width: 10px;
     height: 10px;
+
     border-radius: 50%;
+
     margin-right: 5px;
 }
 
-/* ROUTES */
+/* =========================================================
+   ROUTES
+   ========================================================= */
+
 .routes {
+    width: 100%;
+
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
     gap: 12px;
+
     margin-top: 15px;
 }
 
 .route {
+    width: 100%;
+    min-width: 0;
+
     border: 2px solid #e5e7eb;
+
     border-radius: 12px;
+
     padding: 15px;
+
     cursor: pointer;
+
     transition: 0.2s;
+
+    overflow-wrap: break-word;
 }
 
 .route:hover {
@@ -197,8 +309,14 @@ input {
 
 .route-header {
     display: flex;
+
     justify-content: space-between;
-    gap: 5px;
+
+    align-items: flex-start;
+
+    gap: 8px;
+
+    flex-wrap: wrap;
 }
 
 .score {
@@ -209,17 +327,28 @@ input {
 
 .metrics {
     display: flex;
+
     gap: 15px;
+
     margin-top: 5px;
+
     color: #475467;
+
     font-size: 13px;
+
+    flex-wrap: wrap;
 }
 
 .risk-bar {
     height: 8px;
+
     background: #eee;
+
     border-radius: 10px;
+
     margin: 12px 0;
+
+    overflow: hidden;
 }
 
 .risk-fill {
@@ -229,8 +358,11 @@ input {
 
 .badge {
     padding: 5px 8px;
+
     border-radius: 20px;
+
     font-size: 11px;
+
     font-weight: bold;
 }
 
@@ -249,14 +381,25 @@ input {
     color: #991b1b;
 }
 
-/* ALERT */
+/* =========================================================
+   ALERT
+   ========================================================= */
+
 .alert {
+    width: 100%;
+
     background: #fff7ed;
+
     border: 1px solid #fed7aa;
+
     color: #9a3412;
+
     padding: 14px;
+
     border-radius: 10px;
+
     margin-top: 15px;
+
     line-height: 1.5;
 }
 
@@ -264,50 +407,471 @@ input {
     display: none;
 }
 
-/* DETAILS */
+/* =========================================================
+   DETAILS
+   ========================================================= */
+
 .details {
+    width: 100%;
+
     margin-top: 20px;
+
+    overflow: hidden;
 }
 
 .factor {
+    width: 100%;
+
     display: grid;
-    grid-template-columns: 140px 1fr 40px;
+
+    grid-template-columns:
+        140px minmax(0, 1fr) 40px;
+
     gap: 8px;
+
     align-items: center;
+
     margin: 10px 0;
+
     font-size: 12px;
 }
 
 .factor-bar {
+    width: 100%;
+
     height: 7px;
+
     background: #e5e7eb;
+
     border-radius: 10px;
+
+    overflow: hidden;
 }
 
 .factor-fill {
     height: 100%;
+
     background: #4f46e5;
+
     border-radius: 10px;
 }
 
 .note {
     color: #98a2b3;
+
     font-size: 11px;
+
     margin-top: 20px;
+
     line-height: 1.5;
 }
 
-/* MOBILE */
-@media (max-width: 900px) {
-    .layout {
-        grid-template-columns: 1fr;
+/* =========================================================
+   LARGE TABLET / SMALL LAPTOP
+   901px - 1100px
+   ========================================================= */
+
+@media (max-width: 1100px) {
+
+    .container {
+        padding: 0 16px;
     }
 
-    .routes {
-        grid-template-columns: 1fr;
+    .layout {
+        grid-template-columns:
+            300px minmax(0, 1fr);
+
+        gap: 15px;
+    }
+
+    .card {
+        padding: 16px;
     }
 
     #map {
-        height: 400px;
+        height: 460px;
+    }
+
+    .routes {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* =========================================================
+   TABLET
+   601px - 900px
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    header {
+        padding: 14px 18px;
+    }
+
+    .container {
+        margin: 18px auto;
+
+        padding: 0 15px;
+    }
+
+    /*
+       IMPORTANT:
+       Change the two-column desktop layout
+       into one column.
+    */
+
+    .layout {
+        display: flex;
+
+        flex-direction: column;
+
+        width: 100%;
+
+        gap: 15px;
+    }
+
+    .layout>.card {
+        width: 100%;
+    }
+
+    /* Map */
+
+    #map {
+        width: 100%;
+        height: 430px;
+    }
+
+    /* Routes */
+
+    .routes {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    /* Details */
+
+    .factor {
+        grid-template-columns:
+            130px minmax(0, 1fr) 40px;
+    }
+}
+
+/* =========================================================
+   MOBILE
+   481px - 600px
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+    /* HEADER */
+
+    header {
+        padding: 12px 14px;
+
+        flex-direction: column;
+
+        align-items: stretch;
+
+        gap: 12px;
+    }
+
+    .logo {
+        text-align: center;
+
+        font-size: 23px;
+    }
+
+    .header-right {
+        width: 100%;
+
+        display: grid;
+
+        grid-template-columns:
+            1fr 1fr;
+
+        gap: 8px;
+    }
+
+    .header-right select,
+    .header-right button {
+        width: 100%;
+
+        min-height: 44px;
+    }
+
+    /* MAIN */
+
+    .container {
+        width: 100%;
+
+        padding: 0 12px;
+
+        margin: 15px auto;
+    }
+
+    .card {
+        padding: 16px;
+
+        border-radius: 12px;
+    }
+
+    h1 {
+        font-size: 25px;
+    }
+
+    h2 {
+        font-size: 20px;
+    }
+
+    .subtitle {
+        font-size: 14px;
+    }
+
+    /* INPUTS */
+
+    .input-row {
+        width: 100%;
+
+        gap: 6px;
+    }
+
+    .input-row input {
+        min-width: 0;
+    }
+
+    .location-btn {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    /* PROFILE */
+
+    .profiles {
+        display: grid;
+
+        grid-template-columns:
+            repeat(3, 1fr);
+    }
+
+    .profile {
+        width: 100%;
+
+        min-height: 44px;
+    }
+
+    /* MAP */
+
+    #map {
+        height: 380px;
+    }
+
+    /* LEGEND */
+
+    .legend {
+        font-size: 11px;
+
+        padding: 9px;
+
+        right: 7px;
+
+        top: 7px;
+    }
+
+    /* ROUTES */
+
+    .routes {
+        grid-template-columns: 1fr;
+
+        gap: 10px;
+    }
+
+    .route {
+        padding: 14px;
+    }
+
+    /* DETAILS */
+
+    .factor {
+        grid-template-columns: 1fr;
+
+        gap: 5px;
+    }
+
+    .factor strong {
+        text-align: right;
+    }
+}
+
+/* =========================================================
+   SMALL PHONE
+   361px - 480px
+   ========================================================= */
+
+@media (max-width: 480px) {
+
+    header {
+        padding: 10px;
+    }
+
+    .logo {
+        font-size: 21px;
+    }
+
+    .header-right {
+        grid-template-columns: 1fr;
+    }
+
+    .container {
+        padding: 0 9px;
+
+        margin: 10px auto;
+    }
+
+    .card {
+        padding: 13px;
+    }
+
+    h1 {
+        font-size: 22px;
+    }
+
+    h2 {
+        font-size: 19px;
+    }
+
+    label {
+        font-size: 13px;
+    }
+
+    input,
+    select,
+    button {
+        font-size: 14px;
+
+        min-height: 44px;
+    }
+
+    /* LOCATION INPUT */
+
+    .input-row {
+        display: flex;
+
+        width: 100%;
+    }
+
+    .input-row input {
+        min-width: 0;
+
+        flex: 1;
+    }
+
+    .location-btn {
+        flex-shrink: 0;
+
+        width: 44px;
+
+        padding: 8px;
+    }
+
+    /* PROFILE */
+
+    .profiles {
+        grid-template-columns: 1fr;
+    }
+
+    .profile {
+        width: 100%;
+    }
+
+    /* MAP */
+
+    #map {
+        height: 320px;
+
+        border-radius: 10px;
+    }
+
+    /* ROUTE */
+
+    .route-header {
+        flex-direction: column;
+
+        gap: 7px;
+    }
+
+    .score {
+        font-size: 26px;
+    }
+
+    .metrics {
+        flex-direction: column;
+
+        gap: 4px;
+    }
+
+    .badge {
+        align-self: flex-start;
+    }
+
+    /* ALERT */
+
+    .alert {
+        font-size: 13px;
+
+        padding: 12px;
+    }
+}
+
+/* =========================================================
+   VERY SMALL PHONE
+   360px AND BELOW
+   ========================================================= */
+
+@media (max-width: 360px) {
+
+    .container {
+        padding: 0 7px;
+    }
+
+    .card {
+        padding: 11px;
+    }
+
+    .logo {
+        font-size: 19px;
+    }
+
+    h1 {
+        font-size: 20px;
+    }
+
+    h2 {
+        font-size: 18px;
+    }
+
+    #map {
+        height: 280px;
+    }
+
+    .route {
+        padding: 11px;
+    }
+}
+
+/* =========================================================
+   TOUCH DEVICES
+   ========================================================= */
+
+@media (hover: none) and (pointer: coarse) {
+
+    button,
+    select,
+    input {
+        min-height: 44px;
+    }
+
+    .route:hover {
+        transform: none;
     }
 }

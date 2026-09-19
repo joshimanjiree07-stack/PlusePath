@@ -16,7 +16,8 @@
 
 <body>
 
-    <!-- HEADER -->
+    <!-- ================= HEADER ================= -->
+
     <header>
 
         <div class="logo">
@@ -25,11 +26,21 @@
 
         <div class="header-right">
 
-            <select id="language">
+            <!-- LANGUAGE -->
+            <select id="languageSelect">
                 <option value="en">English</option>
                 <option value="hi">हिन्दी</option>
+                <option value="mr">मराठी</option>
+                <option value="gu">ગુજરાતી</option>
+                <option value="pa">ਪੰਜਾਬੀ</option>
+                <option value="bn">বাংলা</option>
+                <option value="ta">தமிழ்</option>
+                <option value="te">తెలుగు</option>
+                <option value="kn">ಕನ್ನಡ</option>
+                <option value="ml">മലയാളം</option>
             </select>
 
+            <!-- SOS -->
             <button class="sos" onclick="emergencySOS()">
                 🚨 SOS
             </button>
@@ -39,91 +50,125 @@
     </header>
 
 
+    <!-- ================= MAIN CONTAINER ================= -->
+
     <div class="container">
 
         <div class="layout">
 
-            <!-- LEFT PANEL -->
+
+            <!-- ================= LEFT PANEL ================= -->
+
             <div class="card">
 
-                <h1 id="planTitle">
+                <!-- TITLE -->
+
+                <h1 id="planTitle" data-i18n="planRoute">
                     Plan Your Route
                 </h1>
 
-                <p class="subtitle" id="subtitle">
+
+                <!-- SUBTITLE -->
+
+                <p class="subtitle" id="subtitle" data-i18n="compare">
                     Compare safety, time and distance before you choose.
                 </p>
 
 
-                <!-- START -->
-                <label id="startLabel">
+                <!-- ================= STARTING LOCATION ================= -->
+
+                <label id="startLabel" data-i18n="startingLocation">
                     Starting Location
                 </label>
 
                 <div class="input-row">
 
-                    <input id="start" placeholder="e.g. Jaipur Railway Station" />
+                    <input id="start" placeholder="e.g. Jaipur Railway Station"
+                        data-i18n-placeholder="startPlaceholder" />
 
-                    <button class="location-btn" onclick="useCurrentLocation()">
+                    <button class="location-btn" onclick="useCurrentLocation()" title="Use current location">
                         📍
                     </button>
 
                 </div>
 
 
-                <!-- DESTINATION -->
-                <label id="destinationLabel">
+                <!-- ================= DESTINATION ================= -->
+
+                <label id="destinationLabel" data-i18n="destination">
                     Destination
                 </label>
 
-                <input id="destination" placeholder="e.g. Hawa Mahal" />
+                <input id="destination" placeholder="e.g. Hawa Mahal" data-i18n-placeholder="destinationPlaceholder" />
 
 
-                <!-- PROFILE -->
-                <label>
+                <!-- ================= PROFILE ================= -->
+
+                <label data-i18n="profile">
                     Profile
                 </label>
 
                 <div class="profiles">
 
-                    <button class="profile active" data-profile="general" onclick="selectProfile(this)">
-                        🚶 General
+                    <button class="profile active" data-profile="general" onclick="selectProfile(this)"
+                        data-i18n="general">
+                        👦 Male
                     </button>
 
-                    <button class="profile" data-profile="female" onclick="selectProfile(this)">
+                    <button class="profile" data-profile="female" onclick="selectProfile(this)" data-i18n="female">
                         👩 Female
                     </button>
 
-                    <button class="profile" data-profile="cyclist" onclick="selectProfile(this)">
+                    <button class="profile" data-profile="cyclist" onclick="selectProfile(this)" data-i18n="cyclist">
                         🚲 Cyclist
                     </button>
 
                 </div>
 
 
-                <!-- SEARCH -->
-                <button class="find-btn" id="findButton" onclick="findRoutes()">
+                <!-- ================= FIND ROUTES ================= -->
+
+                <button class="find-btn" id="findButton" onclick="findRoutes()" data-i18n="findSaferRoutes">
                     Find Safer Routes
                 </button>
 
+                <!-- ================= VOICE NAVIGATION ================= -->
 
-                <!-- FEMALE ALERT -->
+                <button class="voice-nav-btn" id="voiceNavButton" onclick="startVoiceNavigation()" disabled>
+                    🔊 Start Voice Navigation
+                </button>
+
+                <button class="voice-stop-btn" id="stopVoiceButton" onclick="stopVoiceNavigation()" disabled>
+                    🔇 Stop Voice Navigation
+                </button>
+
+                <div id="voiceStatus" class="voice-status" aria-live="polite">
+                    Select a route to start voice navigation.
+                </div>
+
+
+
+                <!-- ================= FEMALE ALERT ================= -->
+
                 <div id="femaleAlert" class="alert hidden"></div>
 
 
-                <!-- SELECTED ROUTE -->
+                <!-- ================= SELECTED ROUTE ================= -->
+
                 <div class="details">
 
-                    <h2>
+                    <h2 data-i18n="selectedRoute">
                         Selected Route
                     </h2>
 
-                    <div id="routeDetails">
+                    <div id="routeDetails" data-i18n="selectRoute">
                         Select a route to see its safety details.
                     </div>
 
                 </div>
 
+
+                <!-- ================= NOTE ================= -->
 
                 <div class="note">
                     Demo safety scores are simulated for this prototype.
@@ -134,28 +179,45 @@
             </div>
 
 
-            <!-- RIGHT PANEL -->
+            <!-- ================= RIGHT PANEL ================= -->
+
             <div class="card">
+
+                <!-- MAP -->
 
                 <div class="map-container">
 
                     <div id="map"></div>
 
+
+                    <!-- MAP LEGEND -->
+
                     <div class="legend">
 
                         <div>
                             <span class="dot" style="background:#16a34a"></span>
-                            Low Risk
+
+                            <span data-i18n="lowRisk">
+                                Low Risk
+                            </span>
                         </div>
+
 
                         <div>
                             <span class="dot" style="background:#f59e0b"></span>
-                            Moderate
+
+                            <span data-i18n="moderateRisk">
+                                Moderate
+                            </span>
                         </div>
+
 
                         <div>
                             <span class="dot" style="background:#dc2626"></span>
-                            High Risk
+
+                            <span data-i18n="highRisk">
+                                High Risk
+                            </span>
                         </div>
 
                     </div>
@@ -163,7 +225,8 @@
                 </div>
 
 
-                <!-- ROUTE CARDS -->
+                <!-- ================= ROUTE CARDS ================= -->
+
                 <div id="routes" class="routes"></div>
 
             </div>
@@ -173,10 +236,15 @@
     </div>
 
 
-    <!-- LEAFLET (must load BEFORE script.js) -->
+    <!-- ================= LEAFLET ================= -->
+
+    <!-- Must load BEFORE script.js -->
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- Our own JavaScript -->
+
+    <!-- ================= OUR JAVASCRIPT ================= -->
+
     <script src="script.js"></script>
 
 </body>

@@ -16,6 +16,65 @@
 
 <body>
 
+    <!-- ================= LOGIN / ONBOARDING ================= -->
+
+    <main id="loginScreen" class="login-screen">
+        <section class="login-card" aria-labelledby="loginTitle">
+            <div class="login-brand">Pulse<span>Path</span></div>
+            <p class="eyebrow">WELCOME TO PULSEPATH</p>
+            <h1 id="loginTitle">Plan safer journeys</h1>
+            <p class="login-intro">
+                Tell us a little about yourself to personalize your route planning experience.
+            </p>
+
+            <form id="loginForm" class="login-form">
+                <div class="form-field">
+                    <label for="userName">Name</label>
+                    <input id="userName" name="name" type="text" placeholder="Enter your name"
+                        autocomplete="name" required />
+                </div>
+
+                <div class="form-field">
+                    <label for="userEmail">Email address</label>
+                    <input id="userEmail" name="email" type="email" placeholder="you@example.com"
+                        autocomplete="email" required />
+                </div>
+
+                <div class="form-field">
+                    <label for="emergencyContactName">Emergency contact name</label>
+                    <input id="emergencyContactName" name="emergencyContactName" type="text"
+                        placeholder="Enter emergency contact name" autocomplete="name" required />
+                </div>
+
+                <div class="form-field">
+                    <label for="emergencyContactNumber">Emergency contact number</label>
+                    <input id="emergencyContactNumber" name="emergencyContactNumber" type="tel"
+                        placeholder="+91 9876543210" autocomplete="tel" required />
+                </div>
+
+                <div class="form-field">
+                    <label for="userLanguage">Preferred language</label>
+                    <select id="userLanguage" name="language" required>
+                        <option value="en">English</option>
+                        <option value="hi">हिन्दी</option>
+                        <option value="mr">मराठी</option>
+                        <option value="gu">ગુજરાતી</option>
+                        <option value="pa">ਪੰਜਾਬੀ</option>
+                        <option value="bn">বাংলা</option>
+                        <option value="ta">தமிழ்</option>
+                        <option value="te">తెలుగు</option>
+                        <option value="kn">ಕನ್ನಡ</option>
+                        <option value="ml">മലയാളം</option>
+                    </select>
+                </div>
+
+                <button class="login-submit" type="submit">Continue to PulsePath <span aria-hidden="true">→</span></button>
+                <p id="loginError" class="login-error" role="alert" hidden></p>
+            </form>
+        </section>
+    </main>
+
+    <div id="appContent" hidden>
     <!-- ================= HEADER ================= -->
 
     <header>
@@ -25,6 +84,13 @@
         </div>
 
         <div class="header-right">
+
+            <button class="sidebar-toggle" id="sidebarToggle" type="button"
+                aria-label="Hide route planner" aria-expanded="true">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
 
             <!-- LANGUAGE -->
             <select id="languageSelect">
@@ -39,6 +105,10 @@
                 <option value="kn">ಕನ್ನಡ</option>
                 <option value="ml">മലയാളം</option>
             </select>
+
+            <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode">
+                🌙 Dark mode
+            </button>
 
             <!-- SOS -->
             <button class="sos" onclick="emergencySOS()">
@@ -83,8 +153,8 @@
 
                 <div class="input-row">
 
-                    <input id="start" placeholder="e.g. Jaipur Railway Station"
-                        data-i18n-placeholder="startPlaceholder" />
+                    <input id="start" placeholder="Starting Location"
+                        data-i18n-placeholder="startingLocation" />
 
                     <button class="location-btn" onclick="useCurrentLocation()" title="Use current location">
                         📍
@@ -99,7 +169,7 @@
                     Destination
                 </label>
 
-                <input id="destination" placeholder="e.g. Hawa Mahal" data-i18n-placeholder="destinationPlaceholder" />
+                <input id="destination" placeholder="Destination" data-i18n-placeholder="destination" />
 
 
                 <!-- ================= PROFILE ================= -->
@@ -110,13 +180,9 @@
 
                 <div class="profiles">
 
-                    <button class="profile active" data-profile="general" onclick="selectProfile(this)"
-                        data-i18n="general">
-                        👦 Male
-                    </button>
-
-                    <button class="profile" data-profile="female" onclick="selectProfile(this)" data-i18n="female">
-                        👩 Female
+                    <button class="profile active" data-profile="pedestrian" onclick="selectProfile(this)"
+                        data-i18n="pedestrian">
+                        🚶 Pedestrian
                     </button>
 
                     <button class="profile" data-profile="cyclist" onclick="selectProfile(this)" data-i18n="cyclist">
@@ -132,21 +198,9 @@
                     Find Safer Routes
                 </button>
 
-                <!-- ================= VOICE NAVIGATION ================= -->
-
-                <button class="voice-nav-btn" id="voiceNavButton" onclick="startVoiceNavigation()" disabled>
-                    🔊 Start Voice Navigation
-                </button>
-
-                <button class="voice-stop-btn" id="stopVoiceButton" onclick="stopVoiceNavigation()" disabled>
-                    🔇 Stop Voice Navigation
-                </button>
-
                 <div id="voiceStatus" class="voice-status" aria-live="polite">
-                    Select a route to start voice navigation.
+                    Enter a route to start GPS and voice navigation.
                 </div>
-
-
 
                 <!-- ================= FEMALE ALERT ================= -->
 
@@ -247,6 +301,7 @@
 
     <script src="script.js"></script>
 
+    </div>
 </body>
 
 </html>

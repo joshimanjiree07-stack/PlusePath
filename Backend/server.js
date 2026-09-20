@@ -11,6 +11,7 @@ const twilioClient = twilio(
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
 app.use(cors());
 app.use(express.json());
@@ -331,7 +332,7 @@ app.post("/api/routes", (req, res) => {
 
 app.post("/api/sos", async (req, res) => {
     try {
-        const { phoneNumber } = req.body;
+        const { phoneNumber, contactName } = req.body;
 
         if (!phoneNumber) {
             return res.status(400).json({
@@ -340,9 +341,20 @@ app.post("/api/sos", async (req, res) => {
             });
         }
 
+        if (!twilioPhoneNumber) {
+            return res.status(500).json({
+                success: false,
+                error: "Twilio sender number is not configured"
+            });
+        }
+
         const message = await twilioClient.messages.create({
             to: phoneNumber,
-            body: "sms_appointment_reminders"
+            from: twilioPhoneNumber,
+            body:
+                "PulsePath SOS: " +
+                (contactName || "Your emergency contact") +
+                ", an emergency alert was triggered. Please contact the user immediately."
         });
 
         console.log("SOS SMS sent:", message.sid);

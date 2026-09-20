@@ -10,6 +10,10 @@
     font-family: Arial, sans-serif;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 html {
     width: 100%;
     overflow-x: hidden;
@@ -446,6 +450,21 @@ input {
     font-size: 15px;
 
     min-height: 45px;
+}
+
+.voice-status {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #eef2ff;
+    color: #3730a3;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+body.dark-mode .voice-status {
+    background: #312e81;
+    color: #e0e7ff;
 }
 
 /* =========================================================
@@ -911,6 +930,10 @@ input {
         margin: 15px auto;
     }
 
+    .container.route-planner-expanded {
+        margin: 0;
+    }
+
     .card {
         padding: 16px;
 
@@ -952,7 +975,7 @@ input {
         display: grid;
 
         grid-template-columns:
-            repeat(3, 1fr);
+            repeat(2, minmax(0, 1fr));
     }
 
     .profile {
@@ -964,7 +987,8 @@ input {
     /* MAP */
 
     #map {
-        height: 380px;
+        height: min(58vh, 420px);
+        min-height: 300px;
     }
 
     /* LEGEND */
@@ -991,6 +1015,12 @@ input {
         padding: 14px;
     }
 
+    .layout.route-planner-expanded .map-container,
+    .layout.route-planner-expanded #map {
+        height: 62vh;
+        min-height: 360px;
+    }
+
     /* DETAILS */
 
     .factor {
@@ -1012,7 +1042,8 @@ input {
 @media (max-width: 480px) {
 
     header {
-        padding: 10px;
+        padding: 10px 12px;
+        gap: 10px;
     }
 
     .logo {
@@ -1020,17 +1051,18 @@ input {
     }
 
     .header-right {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 7px;
     }
 
     .container {
         padding: 0 9px;
 
-        margin: 10px auto;
+        margin: 10px auto 18px;
     }
 
     .card {
-        padding: 13px;
+        padding: 14px;
     }
 
     h1 {
@@ -1051,6 +1083,13 @@ input {
         font-size: 14px;
 
         min-height: 44px;
+    }
+
+    .theme-toggle,
+    .sos {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     /* LOCATION INPUT */
@@ -1088,9 +1127,16 @@ input {
     /* MAP */
 
     #map {
-        height: 320px;
+        height: 52vh;
+        min-height: 280px;
 
         border-radius: 10px;
+    }
+
+    .layout.route-planner-expanded .map-container,
+    .layout.route-planner-expanded #map {
+        height: 64vh;
+        min-height: 320px;
     }
 
     /* ROUTE */

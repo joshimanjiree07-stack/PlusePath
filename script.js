@@ -18,6 +18,8 @@
 
 let map;
 let routeLayers = [];
+let currentLocationMarker = null;
+let traveledRouteLayer = null;
 let routes = [];
 let selectedRoute = 0;
 let currentProfile = "pedestrian";
@@ -387,7 +389,7 @@ function selectProfile(button) {
         routes = routes.map(function (route, index) {
             return {
                 ...route,
-                safety: calculateSafetyScore(index)
+                safety: calculateSafetyScore(route, index)
             };
         });
 
@@ -517,6 +519,7 @@ async function findRoutes() {
         createRoutes();
         selectRoute(0);
         expandRoutePlanner();
+        startVoiceNavigation();
 
         /*
           Prepare voice instructions immediately.
@@ -665,6 +668,11 @@ function drawRoutes() {
 
     routeLayers = [];
 
+    if (traveledRouteLayer) {
+        map.removeLayer(traveledRouteLayer);
+        traveledRouteLayer = null;
+    }
+
     routes.forEach(function (route, index) {
         const risk = getRisk(route.safety.score);
 
@@ -691,6 +699,54 @@ function drawRoutes() {
         map.fitBounds(bounds, {
             padding: [30, 30]
         });
+    }
+}
+
+function updateTraveledRoute(latitude, longitude) {
+    const route = routes[selectedRoute];
+    const coordinates = route &&
+        route.geometry &&
+        route.geometry.coordinates;
+
+    if (!coordinates || coordinates.length < 2) {
+        return;
+    }
+
+    let closestIndex = 0;
+    let closestDistance = Infinity;
+
+    coordinates.forEach(function (coordinate, index) {
+        const distance = distanceBetweenPoints(
+            latitude,
+            longitude,
+            Number(coordinate[1]),
+            Number(coordinate[0])
+        );
+
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestIndex = index;
+        }
+    });
+
+    const traveledCoordinates = coordinates
+        .slice(0, closestIndex + 1)
+        .map(function (coordinate) {
+            return [Number(coordinate[1]), Number(coordinate[0])];
+        });
+
+    traveledCoordinates.push([latitude, longitude]);
+
+    if (!traveledRouteLayer) {
+        traveledRouteLayer = L.polyline(traveledCoordinates, {
+            color: "#2563eb",
+            weight: 8,
+            opacity: 0.95,
+            lineCap: "round",
+            lineJoin: "round"
+        }).addTo(map);
+    } else {
+        traveledRouteLayer.setLatLngs(traveledCoordinates);
     }
 }
 
@@ -920,30 +976,43 @@ function selectRoute(index) {
 ========================================= */
 
 async function emergencySOS() {
-    const contact =
-        prompt("Enter your emergency contact number:");
+    let profile;
 
-    if (!contact) {
+    try {
+        profile = JSON.parse(localStorage.getItem("pulsePathUser") || "null");
+    } catch (error) {
+        console.error("Could not read emergency contact:", error);
+    }
+
+    const contactName = profile && profile.emergencyContactName;
+    const contact = profile && profile.emergencyContactNumber;
+
+    if (!contactName || !contact) {
+        alert("Please add an emergency contact on the login page first.");
         return;
     }
 
     const confirmed =
-        confirm("Send SOS alert to " + contact + "?");
+        confirm("Send SOS alert to " + contactName + " (" + contact + ")?");
 
     if (!confirmed) {
         return;
     }
 
     try {
+        const backendHost =
+            window.location.hostname || "localhost";
+
         const response = await fetch(
-            "http://localhost:5000/api/sos",
+            "http://" + backendHost + ":5000/api/sos",
             {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    phoneNumber: contact
+                phoneNumber: contact,
+                contactName: contactName
                 })
             }
         );
@@ -954,6 +1023,8 @@ async function emergencySOS() {
             alert(
                 "🚨 SOS SENT!\n\n" +
                 "Emergency contact: " +
+                contactName +
+                "\n" +
                 contact
             );
         } else {
@@ -1094,13 +1165,38 @@ function getStepInstruction(step) {
 
     const type = maneuver.type || "";
     const modifier = maneuver.modifier || "";
+    const direction = modifier
+        ? modifier.replace(/-/g, " ")
+        : "";
+    const phrase = function (english, localized) {
+        const messages = {
+            en: english,
+            hi: localized.hi || english,
+            mr: localized.mr || english,
+            gu: localized.gu || english,
+            pa: localized.pa || english,
+            bn: localized.bn || english,
+            ta: localized.ta || english,
+            te: localized.te || english,
+            kn: localized.kn || english,
+            ml: localized.ml || english
+        };
+
+        return messages[currentLanguage] || english;
+    };
 
     if (type === "arrive") {
-        return "You have arrived at your destination.";
+        return phrase("You have arrived at your destination.", {
+            hi: "आप अपने गंतव्य पर पहुंच गए हैं।",
+            mr: "तुम्ही तुमच्या गंतव्यस्थानी पोहोचला आहात।"
+        });
     }
 
     if (type === "depart") {
-        return "Start your route and continue ahead.";
+        return phrase("Start your route and continue ahead.", {
+            hi: "अपना मार्ग शुरू करें और आगे बढ़ते रहें।",
+            mr: "तुमचा मार्ग सुरू करा आणि पुढे जा।"
+        });
     }
 
     if (
@@ -1108,38 +1204,48 @@ function getStepInstruction(step) {
         type === "rotary"
     ) {
         if (maneuver.exit) {
-            return (
-                "At the roundabout, take exit " +
-                maneuver.exit +
-                "."
+            return phrase(
+                "At the roundabout, take exit " + maneuver.exit + ".",
+                {
+                    hi: "गोलचक्कर पर निकास " + maneuver.exit + " लें।",
+                    mr: "गोलाकार चौकात बाहेर पडण्याचा मार्ग " +
+                        maneuver.exit + " घ्या।"
+                }
             );
         }
 
-        return "Enter the roundabout and follow the route.";
+        return phrase("Enter the roundabout and follow the route.", {
+            hi: "गोलचक्कर में प्रवेश करें और मार्ग का अनुसरण करें।",
+            mr: "गोलाकार चौकात प्रवेश करा आणि मार्गाचा पाठलाग करा।"
+        });
     }
 
     if (type === "merge") {
         if (modifier) {
-            return (
-                "Merge " +
-                modifier.replace(/-/g, " ") +
-                "."
-            );
+            return phrase("Merge " + direction + ".", {
+                hi: "दाईं ओर मिलें।",
+                mr: "उजवीकडे विलीन व्हा।"
+            });
         }
 
-        return "Merge onto the road.";
+        return phrase("Merge onto the road.", {
+            hi: "सड़क पर मिलें।",
+            mr: "रस्त्यावर विलीन व्हा।"
+        });
     }
 
     if (type === "fork") {
         if (modifier) {
-            return (
-                "Keep " +
-                modifier.replace(/-/g, " ") +
-                " at the fork."
-            );
+            return phrase("Keep " + direction + " at the fork.", {
+                hi: "रास्ते के विभाजन पर " + direction + " रहें।",
+                mr: "रस्त्याच्या फाट्यावर " + direction + " बाजूला रहा।"
+            });
         }
 
-        return "Keep following the route at the fork.";
+        return phrase("Keep following the route at the fork.", {
+            hi: "रास्ते के विभाजन पर मार्ग का अनुसरण करते रहें।",
+            mr: "रस्त्याच्या फाट्यावर मार्गाचा पाठलाग करा।"
+        });
     }
 
     if (
@@ -1147,26 +1253,30 @@ function getStepInstruction(step) {
         type === "off ramp"
     ) {
         if (modifier) {
-            return (
-                "Take the " +
-                modifier.replace(/-/g, " ") +
-                " ramp."
-            );
+            return phrase("Take the " + direction + " ramp.", {
+                hi: direction + " रैंप लें।",
+                mr: direction + " रॅम्प घ्या।"
+            });
         }
 
-        return "Take the ramp.";
+        return phrase("Take the ramp.", {
+            hi: "रैंप लें।",
+            mr: "रॅम्प घ्या।"
+        });
     }
 
     if (type === "continue") {
         if (modifier) {
-            return (
-                "Continue " +
-                modifier.replace(/-/g, " ") +
-                "."
-            );
+            return phrase("Continue " + direction + ".", {
+                hi: "आगे " + direction + " बढ़ें।",
+                mr: "पुढे " + direction + " जा।"
+            });
         }
 
-        return "Continue straight.";
+        return phrase("Continue straight.", {
+            hi: "सीधे आगे बढ़ें।",
+            mr: "सरळ पुढे जा।"
+        });
     }
 
     if (
@@ -1174,17 +1284,22 @@ function getStepInstruction(step) {
         type === "end of road"
     ) {
         if (modifier) {
-            return (
-                "Turn " +
-                modifier.replace(/-/g, " ") +
-                "."
-            );
+            return phrase("Turn " + direction + ".", {
+                hi: direction + " मुड़ें।",
+                mr: direction + " वळा।"
+            });
         }
 
-        return "Continue on the route.";
+        return phrase("Continue on the route.", {
+            hi: "मार्ग पर आगे बढ़ते रहें।",
+            mr: "मार्गावर पुढे जात रहा।"
+        });
     }
 
-    return "Continue on the route.";
+    return phrase("Continue on the route.", {
+        hi: "मार्ग पर आगे बढ़ते रहें।",
+        mr: "मार्गावर पुढे जात रहा।"
+    });
 }
 
 /* =========================================
@@ -1509,8 +1624,8 @@ function startVoiceNavigation() {
             handleNavigationError,
             {
                 enableHighAccuracy: true,
-                maximumAge: 2000,
-                timeout: 10000
+                maximumAge: 5000,
+                timeout: 60000
             }
         );
 }
@@ -1588,6 +1703,27 @@ function handleNavigationPosition(position) {
         accuracy
     );
 
+    if (!currentLocationMarker) {
+        currentLocationMarker = L.circleMarker(
+            [latitude, longitude],
+            {
+                radius: 8,
+                color: "#2563eb",
+                fillColor: "#60a5fa",
+                fillOpacity: 1,
+                weight: 3
+            }
+        ).addTo(map);
+    } else {
+        currentLocationMarker.setLatLng([latitude, longitude]);
+    }
+
+    updateTraveledRoute(latitude, longitude);
+
+    map.setView([latitude, longitude], Math.max(map.getZoom(), 15), {
+        animate: true
+    });
+
     updateVoiceStatus(
         "📍 GPS active. Accuracy: " +
         Math.round(accuracy) +
@@ -1626,7 +1762,7 @@ function handleNavigationError(error) {
 
     else if (error.code === 3) {
         message =
-            "Location request timed out.";
+            "Waiting for GPS. Move outdoors or enable location services.";
     }
 
     updateVoiceStatus(message);
@@ -1680,8 +1816,6 @@ function showPlanner() {
 function initializeLogin() {
     const loginForm = document.getElementById("loginForm");
     const loginLanguage = document.getElementById("userLanguage");
-    const savedProfile = localStorage.getItem("pulsePathUser");
-    const hasCompletedLogin = new URLSearchParams(window.location.search).get("login") === "complete";
 
     if (loginLanguage && translations[savedLanguage]) {
         loginLanguage.value = savedLanguage;
@@ -1689,30 +1823,6 @@ function initializeLogin() {
 
     if (!loginForm) {
         throw new Error("Login form is missing from the page.");
-    }
-
-    if (savedProfile) {
-        try {
-            const profile = JSON.parse(savedProfile);
-
-            if (
-                profile &&
-                typeof profile.name === "string" &&
-                typeof profile.email === "string" &&
-                translations[profile.language]
-            ) {
-                changeLanguage(profile.language);
-                showPlanner();
-
-                if (hasCompletedLogin) {
-                    window.history.replaceState({}, document.title, "index.html");
-                }
-
-                return;
-            }
-        } catch (error) {
-            localStorage.removeItem("pulsePathUser");
-        }
     }
 
     loginForm.addEventListener("submit", function (event) {
@@ -1726,10 +1836,22 @@ function initializeLogin() {
         const profile = {
             name: String(formData.get("name")).trim(),
             email: String(formData.get("email")).trim(),
+            emergencyContactName: String(
+                formData.get("emergencyContactName")
+            ).trim(),
+            emergencyContactNumber: String(
+                formData.get("emergencyContactNumber")
+            ).trim(),
             language: String(formData.get("language"))
         };
 
-        if (!profile.name || !profile.email || !translations[profile.language]) {
+        if (
+            !profile.name ||
+            !profile.email ||
+            !profile.emergencyContactName ||
+            !profile.emergencyContactNumber ||
+            !translations[profile.language]
+        ) {
             const error = document.getElementById("loginError");
 
             if (error) {
@@ -1741,7 +1863,8 @@ function initializeLogin() {
         }
 
         localStorage.setItem("pulsePathUser", JSON.stringify(profile));
-        window.location.replace("index.html?login=complete");
+        changeLanguage(profile.language);
+        showPlanner();
     });
 }
 

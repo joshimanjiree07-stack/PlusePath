@@ -41,6 +41,18 @@
                 </div>
 
                 <div class="form-field">
+                    <label for="emergencyContactName">Emergency contact name</label>
+                    <input id="emergencyContactName" name="emergencyContactName" type="text"
+                        placeholder="Enter emergency contact name" autocomplete="name" required />
+                </div>
+
+                <div class="form-field">
+                    <label for="emergencyContactNumber">Emergency contact number</label>
+                    <input id="emergencyContactNumber" name="emergencyContactNumber" type="tel"
+                        placeholder="+91 9876543210" autocomplete="tel" required />
+                </div>
+
+                <div class="form-field">
                     <label for="userLanguage">Preferred language</label>
                     <select id="userLanguage" name="language" required>
                         <option value="en">English</option>
@@ -185,6 +197,10 @@
                 <button class="find-btn" id="findButton" onclick="findRoutes()" data-i18n="findSaferRoutes">
                     Find Safer Routes
                 </button>
+
+                <div id="voiceStatus" class="voice-status" aria-live="polite">
+                    Enter a route to start GPS and voice navigation.
+                </div>
 
                 <!-- ================= FEMALE ALERT ================= -->
 

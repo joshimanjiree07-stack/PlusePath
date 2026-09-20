@@ -26,7 +26,7 @@ let currentProfile = "pedestrian";
 let currentLanguage = "en";
 let currentUser = null;
 
-const API_BASE =
+const API_BASE = window.location.port === "5000" ? "" :
     "http://" + (window.location.hostname || "localhost") + ":5000";
 
 /* =========================================
@@ -1973,6 +1973,12 @@ function initializeTheme() {
 ========================================= */
 
 document.addEventListener("DOMContentLoaded", function () {
+
+    if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("service-worker.js").catch(function (error) {
+            console.warn("PlusePath offline support is unavailable:", error);
+        });
+    }
 
     initializeLogin();
     initializeTheme();

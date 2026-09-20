@@ -83,6 +83,7 @@ seedSafetyProfiles();
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "..")));
 
 function normalizeEmail(email) {
     return String(email || "").trim().toLowerCase();
@@ -293,20 +294,16 @@ app.post("/api/auth/logout", (request, response) => {
     response.json({ success: true });
 });
 
-// Home
+// Web application
 app.get("/", (req, res) => {
-    res.json({
-        app: "PulsePath",
-        status: "running",
-        message: "PulsePath backend is working!"
-    });
+    res.sendFile(path.join(__dirname, "..", "index.html"));
 });
 
 // Health check
 app.get("/api/health", (req, res) => {
     res.json({
         success: true,
-        message: "PulsePath API is healthy"
+        message: "PlusePath API is healthy"
     });
 });
 
@@ -718,7 +715,7 @@ app.use((req, res) => {
 // Start server
 app.listen(PORT, () => {
     console.log("=================================");
-    console.log("       PULSEPATH BACKEND");
+    console.log("       PLUSEPATH BACKEND");
     console.log("=================================");
     console.log(`Server: http://localhost:${PORT}`);
     console.log(

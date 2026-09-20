@@ -24,6 +24,10 @@ let routes = [];
 let selectedRoute = 0;
 let currentProfile = "pedestrian";
 let currentLanguage = "en";
+let currentUser = null;
+
+const API_BASE =
+    "http://" + (window.location.hostname || "localhost") + ":5000";
 
 /* =========================================
    TRANSLATIONS
@@ -377,7 +381,7 @@ function useCurrentLocation() {
    PROFILE
 ========================================= */
 
-function selectProfile(button) {
+async function selectProfile(button) {
     document.querySelectorAll(".profile").forEach(function (btn) {
         btn.classList.remove("active");
     });
@@ -386,15 +390,12 @@ function selectProfile(button) {
     currentProfile = button.dataset.profile;
 
     if (routes.length > 0) {
-        routes = routes.map(function (route, index) {
-            return {
-                ...route,
-                safety: calculateSafetyScore(route, index)
-            };
-        });
-
-        createRoutes();
-        selectRoute(selectedRoute);
+        try {
+            await refreshRouteSafety();
+        } catch (error) {
+            console.error("Profile safety refresh error:", error);
+            alert("Could not load safety data for this profile.");
+        }
     }
 }
 
@@ -504,14 +505,7 @@ async function findRoutes() {
             throw new Error("No route found.");
         }
 
-        routes = data.routes
-            .slice(0, 3)
-            .map(function (route, index) {
-                return {
-                    ...route,
-                    safety: calculateSafetyScore(index)
-                };
-            });
+        routes = await getRouteSafety(data.routes.slice(0, 3));
 
         selectedRoute = 0;
 
@@ -519,7 +513,6 @@ async function findRoutes() {
         createRoutes();
         selectRoute(0);
         expandRoutePlanner();
-        startVoiceNavigation();
 
         /*
           Prepare voice instructions immediately.
@@ -534,7 +527,7 @@ async function findRoutes() {
 
         if (firstRouteSteps.length > 0) {
             updateVoiceStatus(
-                "Route selected. Start Voice Navigation when ready."
+                "Route selected. Press Start Navigation to begin GPS guidance."
             );
         } else {
             updateVoiceStatus(
@@ -557,76 +550,47 @@ async function findRoutes() {
     }
 }
 
-/* =========================================
-   SAFETY SCORE
-========================================= */
-
-function calculateSafetyScore(routeIndex) {
-    const demoData = [
-        {
-            accident: 88,
-            traffic: 82,
-            lighting: 86,
-            activity: 91,
-            accessibility: 92,
-            isolation: 88,
-            road: 85
+async function getRouteSafety(routeList) {
+    const response = await fetch(API_BASE + "/api/route-safety", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
         },
-        {
-            accident: 68,
-            traffic: 60,
-            lighting: 64,
-            activity: 63,
-            accessibility: 78,
-            isolation: 60,
-            road: 72
-        },
-        {
-            accident: 38,
-            traffic: 44,
-            lighting: 39,
-            activity: 35,
-            accessibility: 58,
-            isolation: 32,
-            road: 55
-        }
-    ];
+        credentials: "include",
+        body: JSON.stringify({
+            profile: currentProfile,
+            routes: routeList.map(function (route) {
+                return {
+                    distance: route.distance,
+                    duration: route.duration
+                };
+            })
+        })
+    });
 
-    const source = demoData[
-        Math.min(routeIndex, demoData.length - 1)
-    ];
+    const data = await response.json();
 
-    let factor = { ...source };
-
-    if (currentProfile === "cyclist") {
-        factor.accessibility += 7;
-        factor.road += 5;
-        factor.traffic -= 2;
+    if (!response.ok || !data.success) {
+        throw new Error(data.error || "Could not load route safety data.");
     }
 
-    const weights = {
-        accident: 0.20,
-        traffic: 0.15,
-        lighting: 0.15,
-        activity: 0.15,
-        accessibility: 0.15,
-        isolation: 0.10,
-        road: 0.10
-    };
+    return routeList.map(function (route, index) {
+        const safety = data.routes[index];
 
-    let score = 0;
+        return {
+            ...route,
+            safety: {
+                score: safety.score,
+                factors: safety.factors
+            }
+        };
+    });
+}
 
-    for (const key in weights) {
-        score += factor[key] * weights[key];
-    }
-
-    score = Math.round(score);
-    score = Math.max(0, Math.min(100, score));
-
-    return {
-        score: score,
-        factors: factor
-    };
+async function refreshRouteSafety() {
+    routes = await getRouteSafety(routes);
+    createRoutes();
+    selectRoute(selectedRoute);
 }
 
 /* =========================================
@@ -955,6 +919,7 @@ function selectRoute(index) {
 
     if (voiceButton) {
         voiceButton.disabled = false;
+        voiceButton.hidden = false;
     }
 
     const steps =
@@ -976,16 +941,8 @@ function selectRoute(index) {
 ========================================= */
 
 async function emergencySOS() {
-    let profile;
-
-    try {
-        profile = JSON.parse(localStorage.getItem("pulsePathUser") || "null");
-    } catch (error) {
-        console.error("Could not read emergency contact:", error);
-    }
-
-    const contactName = profile && profile.emergencyContactName;
-    const contact = profile && profile.emergencyContactNumber;
+    const contactName = currentUser && currentUser.emergencyContactName;
+    const contact = currentUser && currentUser.emergencyContactNumber;
 
     if (!contactName || !contact) {
         alert("Please add an emergency contact on the login page first.");
@@ -1000,20 +957,15 @@ async function emergencySOS() {
     }
 
     try {
-        const backendHost =
-            window.location.hostname || "localhost";
-
         const response = await fetch(
-            "http://" + backendHost + ":5000/api/sos",
+            API_BASE + "/api/sos",
             {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({
-                phoneNumber: contact,
-                contactName: contactName
-                })
+                credentials: "include",
+                body: JSON.stringify({})
             }
         );
 
@@ -1436,13 +1388,7 @@ function processNavigationPosition(
     const instruction =
         getStepInstruction(step);
 
-    updateVoiceStatus(
-        "🔊 " +
-        instruction +
-        " (" +
-        Math.round(distance) +
-        " m)"
-    );
+    updateVoiceStatus("Navigation active. GPS guidance is running.");
 
     /*
       Speak roughly 120 m before the maneuver.
@@ -1598,14 +1544,16 @@ function startVoiceNavigation() {
 
     if (startButton) {
         startButton.disabled = true;
+        startButton.hidden = true;
     }
 
     if (stopButton) {
         stopButton.disabled = false;
+        stopButton.hidden = false;
     }
 
     updateVoiceStatus(
-        "🔊 Voice navigation is starting..."
+        "Navigation started. GPS guidance is active."
     );
 
     /*
@@ -1661,12 +1609,13 @@ function stopVoiceNavigation(showStatus = true) {
         );
 
     if (startButton) {
-        startButton.disabled =
-            routes.length === 0;
+        startButton.disabled = routes.length === 0;
+        startButton.hidden = routes.length === 0;
     }
 
     if (stopButton) {
         stopButton.disabled = true;
+        stopButton.hidden = true;
     }
 
     if (showStatus) {
@@ -1816,6 +1765,17 @@ function showPlanner() {
 function initializeLogin() {
     const loginForm = document.getElementById("loginForm");
     const loginLanguage = document.getElementById("userLanguage");
+    const authModeToggle = document.getElementById("authModeToggle");
+    const loginTitle = document.getElementById("loginTitle");
+    const loginSubmit = loginForm && loginForm.querySelector(".login-submit");
+    const passwordInput = document.getElementById("userPassword");
+    const profileFields = [
+        document.getElementById("userName"),
+        document.getElementById("emergencyContactName"),
+        document.getElementById("emergencyContactNumber"),
+        loginLanguage
+    ];
+    let authMode = "register";
 
     if (loginLanguage && translations[savedLanguage]) {
         loginLanguage.value = savedLanguage;
@@ -1825,7 +1785,64 @@ function initializeLogin() {
         throw new Error("Login form is missing from the page.");
     }
 
-    loginForm.addEventListener("submit", function (event) {
+    function updateAuthMode() {
+        const isRegistering = authMode === "register";
+
+        if (loginTitle) {
+            loginTitle.textContent = isRegistering ?
+                "Create your account" :
+                "Welcome back";
+        }
+
+        if (loginSubmit) {
+            loginSubmit.innerHTML = isRegistering ?
+                "Create account <span aria-hidden=\"true\">→</span>" :
+                "Sign in <span aria-hidden=\"true\">→</span>";
+        }
+
+        if (authModeToggle) {
+            authModeToggle.textContent = isRegistering ?
+                "Already have an account? Sign in" :
+                "Need an account? Create one";
+        }
+
+        profileFields.forEach(function (field) {
+            if (!field) {
+                return;
+            }
+
+            const fieldContainer = field.closest(".form-field");
+            field.required = isRegistering;
+
+            if (fieldContainer) {
+                fieldContainer.hidden = !isRegistering;
+            }
+        });
+
+        if (passwordInput) {
+            passwordInput.autocomplete = isRegistering ?
+                "new-password" :
+                "current-password";
+        }
+    }
+
+    if (authModeToggle) {
+        authModeToggle.addEventListener("click", function () {
+            authMode = authMode === "register" ? "login" : "register";
+            const error = document.getElementById("loginError");
+
+            if (error) {
+                error.hidden = true;
+                error.textContent = "";
+            }
+
+            updateAuthMode();
+        });
+    }
+
+    updateAuthMode();
+
+    loginForm.addEventListener("submit", async function (event) {
         event.preventDefault();
 
         if (!loginForm.reportValidity()) {
@@ -1833,39 +1850,94 @@ function initializeLogin() {
         }
 
         const formData = new FormData(loginForm);
-        const profile = {
-            name: String(formData.get("name")).trim(),
-            email: String(formData.get("email")).trim(),
-            emergencyContactName: String(
-                formData.get("emergencyContactName")
-            ).trim(),
-            emergencyContactNumber: String(
-                formData.get("emergencyContactNumber")
-            ).trim(),
-            language: String(formData.get("language"))
+        const isRegistering = authMode === "register";
+        const payload = {
+            email: String(formData.get("email") || "").trim(),
+            password: String(formData.get("password") || "")
         };
 
-        if (
-            !profile.name ||
-            !profile.email ||
-            !profile.emergencyContactName ||
-            !profile.emergencyContactNumber ||
-            !translations[profile.language]
-        ) {
-            const error = document.getElementById("loginError");
+        if (isRegistering) {
+            payload.name = String(formData.get("name") || "").trim();
+            payload.emergencyContactName = String(
+                formData.get("emergencyContactName") || ""
+            ).trim();
+            payload.emergencyContactNumber = String(
+                formData.get("emergencyContactNumber") || ""
+            ).trim();
+            payload.language = String(formData.get("language") || "en");
+        }
 
-            if (error) {
-                error.hidden = false;
-                error.textContent = "Please complete all fields before continuing.";
+        const error = document.getElementById("loginError");
+
+        try {
+            if (loginSubmit) {
+                loginSubmit.disabled = true;
             }
 
+            const response = await fetch(
+                API_BASE + (isRegistering ? "/api/auth/register" : "/api/auth/login"),
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    credentials: "include",
+                    body: JSON.stringify(payload)
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || "Authentication failed.");
+            }
+
+            currentUser = data.user;
+            changeLanguage(currentUser.language);
+            showPlanner();
+        } catch (requestError) {
+            if (error) {
+                error.hidden = false;
+                error.textContent = requestError.message;
+            }
+        } finally {
+            if (loginSubmit) {
+                loginSubmit.disabled = false;
+            }
+        }
+    });
+}
+
+async function restoreSession() {
+    try {
+        const response = await fetch(API_BASE + "/api/auth/me", {
+            credentials: "include"
+        });
+
+        if (!response.ok) {
             return;
         }
 
-        localStorage.setItem("pulsePathUser", JSON.stringify(profile));
-        changeLanguage(profile.language);
+        const data = await response.json();
+        currentUser = data.user;
+        changeLanguage(currentUser.language);
         showPlanner();
-    });
+    } catch (error) {
+        console.warn("No active PulsePath session.");
+    }
+}
+
+async function logout() {
+    try {
+        await fetch(API_BASE + "/api/auth/logout", {
+            method: "POST",
+            credentials: "include"
+        });
+    } finally {
+        currentUser = null;
+        document.getElementById("appContent").hidden = true;
+        document.getElementById("loginScreen").hidden = false;
+    }
 }
 
 function initializeTheme() {
@@ -1906,6 +1978,12 @@ document.addEventListener("DOMContentLoaded", function () {
     initializeTheme();
     initializeSidebarToggle();
 
+    const logoutButton = document.getElementById("logoutButton");
+
+    if (logoutButton) {
+        logoutButton.addEventListener("click", logout);
+    }
+
     const voiceButton =
         document.getElementById(
             "voiceNavButton"
@@ -1915,6 +1993,14 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById(
             "stopVoiceButton"
         );
+
+    if (voiceButton) {
+        voiceButton.addEventListener("click", startVoiceNavigation);
+    }
+
+    if (stopButton) {
+        stopButton.addEventListener("click", stopVoiceNavigation);
+    }
 
     if (voiceButton) {
         voiceButton.disabled =
@@ -1928,4 +2014,6 @@ document.addEventListener("DOMContentLoaded", function () {
     updateVoiceStatus(
         "Select a route to start voice navigation."
     );
+
+    restoreSession();
 });

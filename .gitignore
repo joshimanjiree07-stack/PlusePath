@@ -2,3 +2,4 @@ PORT=5000
 node_modules/
 Backend/node_modules/
 .env
+pulsepath.db*

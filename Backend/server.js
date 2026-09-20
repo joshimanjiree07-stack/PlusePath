@@ -1,5 +1,8 @@
 const express = require("express");
 const cors = require("cors");
+const crypto = require("crypto");
+const path = require("path");
+const Database = require("better-sqlite3");
 require("dotenv").config();
 
 const twilio = require("twilio");
@@ -11,9 +14,284 @@ const twilioClient = twilio(
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+const database = new Database(
+    process.env.DB_PATH || path.join(__dirname, "pulsepath.db")
+);
 
-app.use(cors());
+database.pragma("journal_mode = WAL");
+database.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+        password_hash TEXT NOT NULL,
+        emergency_contact_name TEXT NOT NULL,
+        emergency_contact_number TEXT NOT NULL,
+        language TEXT NOT NULL DEFAULT 'en',
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        token_hash TEXT NOT NULL UNIQUE,
+        expires_at INTEGER NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS safety_profiles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        route_index INTEGER NOT NULL,
+        profile TEXT NOT NULL,
+        accident INTEGER NOT NULL,
+        traffic INTEGER NOT NULL,
+        lighting INTEGER NOT NULL,
+        activity INTEGER NOT NULL,
+        accessibility INTEGER NOT NULL,
+        isolation INTEGER NOT NULL,
+        road INTEGER NOT NULL,
+        source TEXT NOT NULL DEFAULT 'prototype seed',
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(route_index, profile)
+    );
+`);
+
+const safetySeed = [
+    [0, "pedestrian", 88, 82, 86, 91, 92, 88, 85],
+    [1, "pedestrian", 68, 60, 64, 63, 78, 60, 72],
+    [2, "pedestrian", 38, 44, 39, 35, 58, 32, 55],
+    [0, "cyclist", 85, 76, 88, 94, 100, 86, 97],
+    [1, "cyclist", 67, 52, 70, 68, 91, 56, 84],
+    [2, "cyclist", 36, 38, 45, 41, 72, 35, 68]
+];
+
+const insertSafetyProfile = database.prepare(`
+    INSERT OR IGNORE INTO safety_profiles (
+        route_index, profile, accident, traffic, lighting, activity,
+        accessibility, isolation, road
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+`);
+
+const seedSafetyProfiles = database.transaction(function () {
+    safetySeed.forEach(function (record) {
+        insertSafetyProfile.run(...record);
+    });
+});
+
+seedSafetyProfiles();
+
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+
+function normalizeEmail(email) {
+    return String(email || "").trim().toLowerCase();
+}
+
+function hashPassword(password) {
+    const salt = crypto.randomBytes(16).toString("hex");
+    const derivedKey = crypto.scryptSync(password, salt, 64).toString("hex");
+    return `${salt}:${derivedKey}`;
+}
+
+function verifyPassword(password, storedHash) {
+    const [salt, expectedKey] = String(storedHash).split(":");
+
+    if (!salt || !expectedKey) {
+        return false;
+    }
+
+    const actualKey = crypto.scryptSync(password, salt, 64).toString("hex");
+    const expectedBuffer = Buffer.from(expectedKey, "hex");
+    const actualBuffer = Buffer.from(actualKey, "hex");
+
+    return expectedBuffer.length === actualBuffer.length &&
+        crypto.timingSafeEqual(expectedBuffer, actualBuffer);
+}
+
+function hashSessionToken(token) {
+    return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+function getCookies(request) {
+    return String(request.headers.cookie || "")
+        .split(";")
+        .map((part) => part.trim().split("="))
+        .filter((part) => part.length === 2)
+        .reduce((cookies, [name, value]) => {
+            cookies[name] = decodeURIComponent(value);
+            return cookies;
+        }, {});
+}
+
+function setSessionCookie(response, token) {
+    const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+    response.setHeader(
+        "Set-Cookie",
+        `pulsepath_session=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${SESSION_DURATION_MS / 1000}${secure}`
+    );
+}
+
+function clearSessionCookie(response) {
+    response.setHeader(
+        "Set-Cookie",
+        "pulsepath_session=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0"
+    );
+}
+
+function createSession(userId) {
+    const token = crypto.randomBytes(32).toString("base64url");
+    const expiresAt = Date.now() + SESSION_DURATION_MS;
+
+    database.prepare(
+        "INSERT INTO sessions (user_id, token_hash, expires_at) VALUES (?, ?, ?)"
+    ).run(userId, hashSessionToken(token), expiresAt);
+
+    return token;
+}
+
+function publicUser(user) {
+    return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        emergencyContactName: user.emergency_contact_name,
+        emergencyContactNumber: user.emergency_contact_number,
+        language: user.language
+    };
+}
+
+function requireAuth(request, response, next) {
+    const token = getCookies(request).pulsepath_session;
+
+    if (!token) {
+        return response.status(401).json({
+            success: false,
+            error: "Authentication is required."
+        });
+    }
+
+    const session = database.prepare(`
+        SELECT users.*
+        FROM sessions
+        JOIN users ON users.id = sessions.user_id
+        WHERE sessions.token_hash = ? AND sessions.expires_at > ?
+    `).get(hashSessionToken(token), Date.now());
+
+    if (!session) {
+        clearSessionCookie(response);
+        return response.status(401).json({
+            success: false,
+            error: "Your session has expired."
+        });
+    }
+
+    request.user = session;
+    next();
+}
+
+function validateAccountFields(body) {
+    const name = String(body.name || "").trim();
+    const email = normalizeEmail(body.email);
+    const password = String(body.password || "");
+    const emergencyContactName = String(body.emergencyContactName || "").trim();
+    const emergencyContactNumber = String(body.emergencyContactNumber || "").trim();
+    const language = String(body.language || "en");
+
+    if (!name || !email || !password || !emergencyContactName || !emergencyContactNumber) {
+        return { error: "All account and emergency contact fields are required." };
+    }
+
+    if (!email.includes("@")) {
+        return { error: "Please enter a valid email address." };
+    }
+
+    if (password.length < 8) {
+        return { error: "Password must be at least 8 characters long." };
+    }
+
+    return {
+        name,
+        email,
+        password,
+        emergencyContactName,
+        emergencyContactNumber,
+        language
+    };
+}
+
+function authenticate(response, user) {
+    const token = createSession(user.id);
+    setSessionCookie(response, token);
+    return response.json({ success: true, user: publicUser(user) });
+}
+
+app.post("/api/auth/register", (request, response) => {
+    const fields = validateAccountFields(request.body);
+
+    if (fields.error) {
+        return response.status(400).json({ success: false, error: fields.error });
+    }
+
+    try {
+        const result = database.prepare(`
+            INSERT INTO users (
+                name, email, password_hash, emergency_contact_name,
+                emergency_contact_number, language
+            ) VALUES (?, ?, ?, ?, ?, ?)
+        `).run(
+            fields.name,
+            fields.email,
+            hashPassword(fields.password),
+            fields.emergencyContactName,
+            fields.emergencyContactNumber,
+            fields.language
+        );
+
+        const user = database.prepare("SELECT * FROM users WHERE id = ?").get(result.lastInsertRowid);
+        return authenticate(response, user);
+    } catch (error) {
+        if (error.code === "SQLITE_CONSTRAINT_UNIQUE") {
+            return response.status(409).json({
+                success: false,
+                error: "An account with that email already exists."
+            });
+        }
+
+        console.error("Registration error:", error);
+        return response.status(500).json({ success: false, error: "Could not create account." });
+    }
+});
+
+app.post("/api/auth/login", (request, response) => {
+    const email = normalizeEmail(request.body.email);
+    const password = String(request.body.password || "");
+    const user = database.prepare("SELECT * FROM users WHERE email = ?").get(email);
+
+    if (!user || !verifyPassword(password, user.password_hash)) {
+        return response.status(401).json({
+            success: false,
+            error: "Email or password is incorrect."
+        });
+    }
+
+    return authenticate(response, user);
+});
+
+app.get("/api/auth/me", requireAuth, (request, response) => {
+    response.json({ success: true, user: publicUser(request.user) });
+});
+
+app.post("/api/auth/logout", (request, response) => {
+    const token = getCookies(request).pulsepath_session;
+
+    if (token) {
+        database.prepare("DELETE FROM sessions WHERE token_hash = ?").run(hashSessionToken(token));
+    }
+
+    clearSessionCookie(response);
+    response.json({ success: true });
+});
 
 // Home
 app.get("/", (req, res) => {
@@ -173,6 +451,78 @@ function getSafetyAlert(factors, profile) {
     };
 }
 
+function calculateProfileSafetyScore(factors, profile) {
+    const weights = profile === "cyclist" ? {
+        accident: 0.18,
+        traffic: 0.18,
+        lighting: 0.10,
+        activity: 0.10,
+        accessibility: 0.20,
+        isolation: 0.09,
+        road: 0.15
+    } : {
+        accident: 0.20,
+        traffic: 0.15,
+        lighting: 0.15,
+        activity: 0.15,
+        accessibility: 0.15,
+        isolation: 0.10,
+        road: 0.10
+    };
+
+    return Math.round(Object.keys(weights).reduce(function (total, key) {
+        return total + factors[key] * weights[key];
+    }, 0));
+}
+
+function getDatabaseSafetyFactors(routeIndex, profile) {
+    const record = database.prepare(`
+        SELECT accident, traffic, lighting, activity, accessibility, isolation, road
+        FROM safety_profiles
+        WHERE route_index = ? AND profile = ?
+    `).get(routeIndex, profile);
+
+    if (!record) {
+        throw new Error("Safety profile is not available for this route.");
+    }
+
+    return record;
+}
+
+app.post("/api/route-safety", (req, res) => {
+    try {
+        const profile = req.body.profile === "cyclist" ? "cyclist" : "pedestrian";
+        const requestedRoutes = Array.isArray(req.body.routes) ? req.body.routes : [];
+
+        if (!requestedRoutes.length || requestedRoutes.length > 3) {
+            return res.status(400).json({
+                success: false,
+                error: "One to three routes are required."
+            });
+        }
+
+        const routes = requestedRoutes.map(function (route, index) {
+            const factors = getDatabaseSafetyFactors(index, profile);
+            const score = calculateProfileSafetyScore(factors, profile);
+
+            return {
+                routeIndex: index,
+                score,
+                factors,
+                risk: getRisk(score)
+            };
+        });
+
+        res.json({ success: true, profile, routes });
+    } catch (error) {
+        console.error("Route safety error:", error);
+        res.status(500).json({
+            success: false,
+            error: "Could not load route safety data."
+        });
+    }
+});
+
 // Distance using coordinates
 function calculateDistance(start, destination) {
     const R = 6371;
@@ -319,19 +669,13 @@ app.post("/api/routes", (req, res) => {
         });
     }
 });
-// Main route API
-app.post("/api/routes", (req, res) => {
-    // your existing code...
-});
-
-
 // ===============================
 // SOS ALERT
 // ===============================
 
-app.post("/api/sos", async (req, res) => {
+app.post("/api/sos", requireAuth, async (req, res) => {
     try {
-        const { phoneNumber } = req.body;
+        const phoneNumber = req.user.emergency_contact_number;
 
         if (!phoneNumber) {
             return res.status(400).json({

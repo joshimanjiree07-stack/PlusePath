@@ -128,6 +128,19 @@ body {
     background: #4338ca;
 }
 
+.auth-mode-toggle {
+    border: none;
+    background: transparent;
+    color: #4f46e5;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.auth-mode-toggle:hover {
+    color: #3730a3;
+    text-decoration: underline;
+}
+
 .login-error {
     margin: 0;
     color: #b42318;
@@ -209,6 +222,12 @@ button {
     color: white;
     border: none;
     font-weight: bold;
+}
+
+.logout-button {
+    background: transparent;
+    color: white;
+    border: 1px solid #475467;
 }
 
 .theme-toggle {
@@ -336,11 +355,11 @@ body.dark-mode .form-field label {
     grid-template-columns: minmax(0, 1fr);
 }
 
-.layout.route-planner-expanded.sidebar-collapsed > .card:first-child {
+.layout.route-planner-expanded.sidebar-collapsed>.card:first-child {
     display: none;
 }
 
-.layout.route-planner-expanded.sidebar-collapsed > .card:last-child {
+.layout.route-planner-expanded.sidebar-collapsed>.card:last-child {
     width: 100%;
 }
 
@@ -358,14 +377,14 @@ body.dark-mode .form-field label {
         0 3px 12px rgba(0, 0, 0, 0.08);
 }
 
-.layout.route-planner-expanded > .card:first-child {
+.layout.route-planner-expanded>.card:first-child {
     min-height: calc(100vh - 65px);
     max-height: calc(100vh - 65px);
     overflow-y: auto;
     border-radius: 0;
 }
 
-.layout.route-planner-expanded > .card:last-child {
+.layout.route-planner-expanded>.card:last-child {
     min-width: 0;
     min-height: calc(100vh - 65px);
     border-radius: 0;
@@ -460,6 +479,23 @@ input {
     color: #3730a3;
     font-size: 13px;
     line-height: 1.4;
+}
+
+.voice-controls {
+    width: 100%;
+    margin-top: 12px;
+}
+
+.voice-controls .find-btn {
+    margin-top: 0;
+}
+
+.stop-nav-btn {
+    background: #dc2626;
+}
+
+.stop-nav-btn:hover {
+    background: #b91c1c;
 }
 
 body.dark-mode .voice-status {
@@ -825,13 +861,13 @@ body.dark-mode .voice-status {
         min-height: auto;
     }
 
-    .layout.route-planner-expanded > .card:first-child {
+    .layout.route-planner-expanded>.card:first-child {
         min-height: auto;
         max-height: none;
         border-radius: 0;
     }
 
-    .layout.route-planner-expanded > .card:last-child {
+    .layout.route-planner-expanded>.card:last-child {
         min-height: auto;
     }
 
